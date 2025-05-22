@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Register User</title>
+  </head>
+  <body>
+    <h2>Register User</h2>
+    <form id="userForm">
+      <input name="name" placeholder="Name" required />
+      <input name="email" placeholder="Email" required type="email" />
+      <button type="submit">Submit</button>
+    </form>
+
+    <script>
+      document
+        .getElementById("userForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const data = {
+            name: e.target.name.value,
+            email: e.target.email.value,
+          };
+          const res = await fetch("/api/add-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const { error, message } = await res.json();
+          if (error) {
+            alert("Error: " + error);
+          } else {
+            alert(message);
+            e.target.reset();
+          }
+        });
+    </script>
+  </body>
+</html>
