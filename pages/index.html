@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Create Account</title>
+    <title>Welcome</title>
     <style>
+      /* page layout */
       body {
         font-family: "Segoe UI", Arial, sans-serif;
         background: #f5f7fa;
@@ -27,23 +28,48 @@
         margin-bottom: 1rem;
         color: #333;
       }
-      form {
+
+      /* tabs */
+      .tab-container {
         display: flex;
+        margin-bottom: 1rem;
+      }
+      .tab {
+        flex: 1;
+        padding: 0.75rem;
+        background: #eaeaea;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.2s;
+      }
+      .tab.active {
+        background: #fff;
+        border-bottom: 3px solid #0070f3;
+        font-weight: bold;
+      }
+
+      /* forms */
+      .form {
+        display: none;
         flex-direction: column;
         gap: 0.75rem;
       }
-      input {
+      .form.active {
+        display: flex;
+      }
+      .form input {
         padding: 0.75rem;
         border: 1px solid #ccc;
         border-radius: 4px;
         font-size: 1rem;
         transition: border-color 0.2s;
       }
-      input:focus {
+      .form input:focus {
         outline: none;
         border-color: #0070f3;
       }
-      button {
+      .form button {
         padding: 0.75rem;
         background: #0070f3;
         color: #fff;
@@ -53,23 +79,42 @@
         cursor: pointer;
         transition: background 0.2s;
       }
-      button:hover {
+      .form button:hover {
         background: #005ec2;
       }
+
+      /* feedback */
       .message {
         margin-top: 1rem;
-        font-size: 1rem;
+        font-size: 1.1rem;
         color: #0070f3;
       }
-      .error {
+      .message.error {
         color: #d00;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Create Account</h1>
-      <form id="userForm">
+      <h1>Welcome</h1>
+
+      <div class="tab-container">
+        <button id="tab-login" class="tab active">Login</button>
+        <button id="tab-signup" class="tab">Sign Up</button>
+      </div>
+
+      <form id="form-login" class="form active">
+        <input
+          name="email"
+          placeholder="Your email"
+          type="email"
+          required
+          autocomplete="off"
+        />
+        <button type="submit">Login</button>
+      </form>
+
+      <form id="form-signup" class="form">
         <input
           name="name"
           placeholder="Your name"
@@ -79,41 +124,86 @@
         <input
           name="email"
           placeholder="Your email"
-          required
           type="email"
+          required
           autocomplete="off"
         />
         <button type="submit">Create Account</button>
       </form>
+
       <div id="feedback" class="message" role="alert"></div>
     </div>
 
     <script>
-      const form = document.getElementById("userForm");
+      const tabLogin = document.getElementById("tab-login");
+      const tabSignup = document.getElementById("tab-signup");
+      const formLogin = document.getElementById("form-login");
+      const formSignup = document.getElementById("form-signup");
       const feedback = document.getElementById("feedback");
 
-      form.addEventListener("submit", async (e) => {
+      function showTab(which) {
+        if (which === "login") {
+          tabLogin.classList.add("active");
+          tabSignup.classList.remove("active");
+          formLogin.classList.add("active");
+          formSignup.classList.remove("active");
+        } else {
+          tabLogin.classList.remove("active");
+          tabSignup.classList.add("active");
+          formLogin.classList.remove("active");
+          formSignup.classList.add("active");
+        }
+        feedback.textContent = "";
+        feedback.classList.remove("error");
+      }
+
+      tabLogin.addEventListener("click", () => showTab("login"));
+      tabSignup.addEventListener("click", () => showTab("signup"));
+
+      async function handleResponse(res, flow) {
+        const json = await res.json();
+        if (res.ok) {
+          // got name back?
+          const name = flow === "signup" ? json.name : json.name;
+          feedback.textContent = `hello, ${name}`;
+          formLogin.style.display = formSignup.style.display = "none";
+        } else {
+          throw new Error(json.error || json.message);
+        }
+      }
+
+      formLogin.addEventListener("submit", async (e) => {
         e.preventDefault();
         feedback.textContent = "";
         feedback.classList.remove("error");
-
-        const name = form.name.value.trim();
-        const email = form.email.value.trim();
-
         try {
-          const res = await fetch("/api/add-user", {
+          const email = formLogin.email.value.trim();
+          const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          await handleResponse(res, "login");
+        } catch (err) {
+          feedback.textContent = err.message;
+          feedback.classList.add("error");
+        }
+      });
+
+      formSignup.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        feedback.textContent = "";
+        feedback.classList.remove("error");
+        try {
+          const name = formSignup.name.value.trim();
+          const email = formSignup.email.value.trim();
+          const res = await fetch("/api/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email }),
           });
-          const json = await res.json();
-
-          if (res.ok) {
-            feedback.textContent = `hello, ${name}`;
-            form.reset();
-          } else {
-            throw new Error(json.error || json.message);
-          }
+          // signup endpoint will echo back the row, including name
+          await handleResponse(res, "signup");
         } catch (err) {
           feedback.textContent = err.message;
           feedback.classList.add("error");
