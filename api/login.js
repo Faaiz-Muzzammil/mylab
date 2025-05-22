@@ -6,7 +6,9 @@ module.exports = async (req, res) => {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-  const { email } = req.body || {};
+
+  // trim + lowercase the email before querying
+  const email = (req.body.email || "").trim().toLowerCase();
   if (!email) {
     return res.status(400).json({ error: "Email is required." });
   }
@@ -24,12 +26,13 @@ module.exports = async (req, res) => {
       .single();
 
     if (error) {
-      // no row found or other error
+      // if it's a “no rows” error, return 404; otherwise 500
       return res.status(404).json({ error: "User not found." });
     }
+
     res.status(200).json({ name: data.name });
   } catch (err) {
-    console.error(err);
+    console.error("Login error:", err);
     res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 };

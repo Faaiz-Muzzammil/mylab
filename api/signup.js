@@ -6,7 +6,11 @@ module.exports = async (req, res) => {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-  const { name, email } = req.body || {};
+
+  // trim + lowercase the email before inserting
+  const name = (req.body.name || "").trim();
+  const email = (req.body.email || "").trim().toLowerCase();
+
   if (!name || !email) {
     return res.status(400).json({ error: "Name and email are required." });
   }
@@ -24,10 +28,9 @@ module.exports = async (req, res) => {
       .single();
 
     if (error) throw error;
-    // return the name we just inserted
     res.status(200).json({ name: data.name });
   } catch (err) {
-    console.error(err);
+    console.error("Signup error:", err);
     res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 };
