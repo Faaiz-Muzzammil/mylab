@@ -1,0 +1,11 @@
+{
+  "name": "vercel-supabase-lab",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.34.0"
+  }
+}
